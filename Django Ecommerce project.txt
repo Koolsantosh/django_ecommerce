@@ -1,0 +1,500 @@
+Django Ecommerce project:
+
+Step 1: create folder & create virtual env in that folder main_folder & install Django 3.1: pip install django==3.1
+step 2: create project in above created folder : django-admin startproject projectname . # this . won't create app, only create project
+step 3: start the project : py manage.py runserver: see the result
+step 4: make changes in urls.py file to load httpresponse, not default Django page
+step 5: get the bootstrap template and extract files and load template html file
+step 6: make templates folder in the main directory: main_folder: change in settings.py file: templates: DIRS=['templates']
+step 7: settings.py : static file config : static folder is inside main project folder: 'greatkart'
+
+STATIC_URL = '/static/'
+
+STATIC_ROOT=BASE_DIR / 'static'
+
+STATICFILES_DIRS = [
+    'greatkart/static',
+]
+
+step 8: to serve media file while while development: to allow user to access images: add this in urls.py of main project folder: 
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+ + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+settings.py: 
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = BASE_DIR / 'media'
+
+step 9: keep all images,css,fonts... in static folder of app: in our case greatkart/static/, and all html files in templates folder
+step 10: make necessary linking changes to load static files to load home.html (main page of project)
+step 11: make app: category and in models.py of category: 
+from django.db import models
+
+# Create your models here.
+class Category(models.Model):
+    category_name = models.CharField(max_length=50,unique=True)
+    slug = models.CharField(max_length=100,unique=True)
+    description = models.TextField(max_length=255,blank=True)
+    cat_image = models.ImageField(upload_to='photos/categories',blank=True)
+
+    class Meta:
+        verbose_name='category'
+        verbose_name_plural='Categories'
+    
+    def __str__(self):
+        return self.category_name
+
+step 12: admin.py:
+
+from django.contrib import admin
+from .models import Category
+
+# Register your models here.
+admin.site.register(Category)
+
+step 13: migrate changes
+
+py manage.py makemigrations
+py manage.py migrate  
+
+step 14: create super user
+
+py manage.py createsuperuser
+
+step 14: creating custom user model: create app named: accounts & add that in install apps in settings.py
+step 15: create model in models.py file accounts
+
+from django.db import models
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+
+class MyAccountManager(BaseUserManager):
+    def create_user(self,first_name,last_name,username,email,password=None):
+        if not email:
+            raise ValueError('User must have an email address')
+        
+        if not username:
+            raise ValueError('User must have an username')
+        
+        user = self.model(
+            email=self.normalize_email(email),
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+        )
+
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+    
+    def create_superuser(self,first_name,last_name,email,username,password):
+        user = self.create_user(
+            email=self.normalize_email(email),
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        user.is_admin=True
+        user.is_active=True
+        user.is_staff=True
+        user.is_superadmin=True
+        user.save(using=self._db)
+        return user
+
+# Create your models here.
+class Account(AbstractBaseUser):
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    username = models.CharField(max_length=50,unique=True)
+    email= models.EmailField(max_length=100,unique=True)
+    phone_number = models.CharField(max_length=50)
+
+    #required
+    date_joined = models.DateTimeField(auto_now_add=True)
+    last_login = models.DateTimeField(auto_now_add=True)
+    is_admin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
+    is_superadmin = models.BooleanField(default=False)
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username","first_name","last_name"]
+
+    objects = MyAccountManager()
+
+    def __str__(self):
+        return self.email
+    
+    def has_perm(self, perm, obj=None):
+        "Does the user have a specific permission?"
+        # Simplest possible answer: Yes, always, but giving admin permission: which means can access and modify whole project
+        return self.is_admin
+    
+    def has_module_perms(self, app_label):
+        "Does the user have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
+
+step 17: accounts: admin.py file
+
+from django.contrib import admin
+from .models import Account
+
+# Register your models here.
+admin.site.register(Account)
+
+
+step 18: delete existing database file sqlite3.db
+delete migration file inside category app : migrations folder : 0001.initial.py, 0002_auto_2020.... file, if any other app you have delete those migrations files too.
+
+step 19: run command to create database file: sqlite3.db 
+py manage.py runserver
+py manage.py makemigrations
+py manage.py migrate
+py manage.py createsuperuser
+
+step 20: visit 127.0.0.1:800/admin and login with credential of super user: email and password
+
+step 21: check accounts model: password field: encrypted form, but allowing changes,: make only readable: change in admin.py file
+
+from django.contrib import admin
+from .models import Account
+from django.contrib.auth.admin import UserAdmin
+
+# Register your models here.
+class AccountAdmin(UserAdmin):
+    list_display=('email','first_name','username','last_login','date_joined','is_active')
+    list_filter=()
+    search_fields = ["email"]
+    filter_horizontal = []
+    fieldsets = []
+    list_display_links=['email','first_name','last_name','username']
+    readonly_fields=['last_login','date_joined']
+    ordering = ["-date_joined"]
+
+
+
+admin.site.register(Account,AccountAdmin)
+
+
+step 22: media configuration done in step 8: now create categories: from admin panel:
+after creating category: check media/photos/categories/ folder to check uploaded images while creating categories.
+
+step 23: make slug field auto filled up in category: make changes in category app: model.py: and migrate it
+
+    slug = models.SlugField(max_length=100,unique=True)
+
+step 24: make changes in admin.py of categories app: reference link:
+
+https://docs.djangoproject.com/en/5.1/ref/contrib/admin#django.contrib.admin.ModelAdmin.prepopulated_fields 
+
+from django.contrib import admin
+from .models import Category
+
+# Register your models here.
+class CategoryAdmin(admin.ModelAdmin):
+    prepopulated_fields={
+        'slug':('category_name',)
+    }
+    list_display=('category_name','slug')
+
+
+admin.site.register(Category,CategoryAdmin)
+
+step 25: create 5 categories from admin panel:
+
+step 26: create store app & add it in settings.py installed_apps list
+
+step 27: create product model inside store:
+
+
+from django.db import models
+from category.models import Category
+
+# Create your models here.
+class Product(models.Model):
+    product_name=models.CharField(max_length=200,unique=True)
+    slug=models.SlugField(max_length=200,unique=True)
+    description =models.TextField(max_length=500,blank=True)
+    price = models.IntegerField()
+    images=models.ImageField(upload_to='photos/products')
+    stock=models.IntegerField()
+    is_available=models.IntegerField()
+    category=models.ForeignKey(Category,on_delete=models.CASCADE)
+    created_date=models.DateTimeField(auto_now_add=True)
+    modified_date=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.product_name
+
+step 28: admin.py file of store app
+
+from django.contrib import admin
+from .models import Product
+
+# Register your models here.
+class ProductAdmin(admin.ModelAdmin):
+    list_display=('product_name','price','stock','category','modified_date','is_available')
+    prepopulated_fields={'slug':('product_name',)}
+    
+admin.site.register(Product)
+
+step 29: migrate it & create 8 products
+
+step 30: display products on home page: make changes in greatkart folder (main project folder) views.py:
+
+from django.shortcuts import render
+from store.models import Product
+
+def home(request):
+    products = Product.objects.all().filter(is_available=True)
+    context={
+        'products':products
+    }
+    return render(request,'home.html',context)
+
+step 31: now templates/home.html: changes: just to iterate throught all products:
+
+<div class="row">
+	{%for product in products%}
+	<div class="col-md-3">
+		<div class="card card-product-grid">
+			<a href="./product-detail.html" class="img-wrap"> <img src="{{product.images.url}}"> </a>
+			<figcaption class="info-wrap">
+				<a href="./product-detail.html" class="title">{{product.product_title}}</a>
+				<div class="price mt-1">${{product.price}}.00</div> <!-- price-wrap.// -->
+			</figcaption>
+		</div>
+	</div> <!-- col.// -->
+	{%endfor%}
+</div> <!-- row.// -->
+
+step 32: make folder in templates folder: store/store.html & make changes in urls.py file and load store.html in : 127.0.0.1:8000/store url
+
+<span class="mr-md-auto">{{product_count}} items found</span>
+
+
+<div class="row">
+        {%for product in products%}
+        <div class="col-md-4">
+            <figure class="card card-product-grid">
+                <div class="img-wrap"> 
+                    
+                    <img src="{{product.images.url}}">
+                    
+                </div> <!-- img-wrap.// -->
+                <figcaption class="info-wrap">
+                    <div class="fix-height">
+                        <a href="./product-detail.html" class="title">{{product.product_name}}</a>
+                        <div class="price-wrap mt-2">
+                            <span class="price">${{product.price}}</span>
+                            <del class="price-old">${{product.price}}</del>
+                        </div> <!-- price-wrap.// -->
+                    </div>
+                    <a href="#" class="btn btn-block btn-success">Add to cart </a>
+                </figcaption>
+            </figure>
+        </div> <!-- col.// -->
+        {%endfor%}
+    
+    </div> <!-- row end.// -->
+
+step 33: views.py file of store:
+
+from django.shortcuts import render
+from .models import Product
+
+# Create your views here.
+def store(request):
+    products = Product.objects.all().filter(is_available=True)
+    product_count=products.count()
+
+    context={
+        'products':products
+        'product_count':product_count
+
+    }
+    return render(request,'store/store.html',context)
+
+step 34: urls.py of store:
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.store,name='store'),
+
+] 
+
+step 35: urls.py of greatkart: update:
+
+    path('store/', include('store.urls')),
+
+step 36: in store only: display products based on the categories slug: http://127.0.0.1:8000/store/shirt
+
+step 37: urls.py of store:
+
+    path('<slug:category_slug>/',views.store,name='products_by_category')
+
+step 38: views.py of store:
+
+from django.shortcuts import render,get_object_or_404
+from .models import Product
+from category.models import Category
+# Create your views here.
+def store(request,category_slug=None):
+    
+    categories=None
+    products = None
+
+    if category_slug !=None:
+        categories=get_object_or_404(Category,slug=category_slug)
+        products = Product.objects.filter(category=categories,is_available=True)
+        product_count = products.count()
+    else:
+        products = Product.objects.all().filter(is_available=True)
+        product_count=products.count()
+    
+    context={
+        'products':products,
+        'product_count':product_count,
+    }
+    
+    return render(request,'store/store.html',context)
+
+step 39: context_processors.py in category app: create new file context_processors.py :
+
+from .models import Category
+
+def menu_links(request):
+    links = Category.objects.all()
+    return {'links':links}
+
+step 40: navbar.html: just to display options: 
+
+{%for menu_link in links%}
+   <a class="dropdown-item" href="#">{{menu_link}}</a> <!--here menu_link means category_name-->
+{%endfor%}
+
+step 41: allow click and display based on category selected: navbar.html
+
+<a class="dropdown-item" href="{% url 'store' %}">All Products</a>
+				{%for menu_link in links%} <!--here menu_link means category_name-->
+				<a class="dropdown-item" href="{{ menu_link.get_url }}">{{menu_link}}</a>
+				{%endfor%}
+
+step 42: models.py of category: because we are calling using the object of category model:
+
+def get_url(self):
+                return reverse('product_by_category',args=[self.slug]) 
+		#here product_by_category is name of urls in store:urls.py file and self.slug represent slug of calling object of Category
+
+
+step 43: Display Category on Store Page : views.py of store: changes
+
+    category_list =Category.objects.all()
+
+        'category_list':category_list,
+
+step 44: change in store.html:
+
+<ul class="list-menu">
+                        <li><a href="{%url 'store' %}">All Products</a></li>
+                    {%for category_name in category_list %}
+                        <li><a href="{{category_name.get_url}}">{{category_name}}  </a></li>
+                    {%endfor%}
+
+
+step 45: Display project details on : 127.0.0.1:8000/category_slug/product_slug
+
+create product_detail.html in template/store folder
+and in store app views.py file:
+
+def product_detail(request,category_slug,product_slug):
+    try:
+	# category is field of product Model __ is use to access it linked Model i.e category: field is slug
+        single_product=Product.objects.get(category__slug=category_slug, slug=product_slug)
+    except Exception as e:
+        raise e
+    
+    context={
+        'single_product':single_product,
+    }
+    return render(request,'store/product_detail.html',context)
+
+
+
+step 46: to display product details in: product_detail.html
+
+
+    <!-- ============================ COMPONENT 1 ================================= -->
+    <div class="card">
+        <div class="row no-gutters">
+            <aside class="col-md-6">
+    <article class="gallery-wrap"> 
+        <div class="img-big-wrap">
+           <a href="#"><img src="{{single_product.images.url}}"></a>
+        </div> <!-- img-big-wrap.// -->
+        
+    </article> <!-- gallery-wrap .end// -->
+            </aside>
+            <main class="col-md-6 border-left">
+    <article class="content-body">
+    
+    <h2 class="title">{{single_product.product_name}}</h2>
+    
+    <div class="mb-3"> 
+        <var class="price h4">${{single_product.price}}.00</var> 
+    </div> 
+    
+    <p>{{single_product.description}}</p>
+    
+
+step 47: to open product_detail page on click on item name or image in store page:
+
+    <a href="{{ product.get_url }}">
+                    <img src="{{product.images.url}}">
+                </a>
+                
+            </div> <!-- img-wrap.// -->
+                <figcaption class="info-wrap">
+                    <div class="fix-height">
+                        <a href="{{ product.get_url }}" class="title">{{product.product_name}}</a>
+ 
+step 48: also make changes in store models.py file : to get url with slug of category and product: function based on model:
+
+def get_url(self):
+        return reverse('product_detail',args=[self.category.slug, self.slug])
+
+step 49: to make same function in home.html :
+
+<a href="{{product.get_url}}" class="img-wrap"> <img src="{{product.images.url}}"> </a>
+			<figcaption class="info-wrap">
+				<a href="{{product.get_url}}" class="title">{{product.product_name}}</a>
+				<div class="price mt-1">${{product.price}}.00</div> <!-- price-wrap.// -->
+			</figcaption>
+
+step 50: display Out of stock if stock is < 0 zero else display Add to cart: product_detail.html:
+
+{%if single_product.stock <= 0 %}
+        <h4 class='text-danger text-center'>Out of Stock</h4>
+        {%else%}
+        <a href="./product-detail.html" class="btn  btn-primary"> <span class="text">Add to cart</span> <i class="fas fa-shopping-cart"></i>  </a>
+        {%endif%}
+
+step 51: do same in store.html too:
+
+ {%if product.stock <= 0 %}
+                    <h4 class='text-danger text-white'>Out of Stock</h4>
+                    {%else%}
+                    <a href="#" class="btn btn-block btn-success">Add to cart </a>
+                    {%endif%}
+
+step 52: change cover page photo in home.html:
+
+	<img src="{%static 'images/banners/cover.jpg'%}" class="img-fluid rounded">
+
