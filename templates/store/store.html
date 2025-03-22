@@ -153,9 +153,9 @@
                         </div> <!-- price-wrap.// -->
                     </div>
                     {%if product.stock <= 0 %}
-                    <h5 class='text-danger text-white'>Out of Stock</h5>
+                    <a href="#" class="btn btn-block btn-success disabled">Out of stock</a>
                     {%else%}
-                    <a href="#" class="btn btn-block btn-success">Add to cart </a>
+                    <a href="{% url 'add_cart' product.id %}" class="btn btn-block btn-success">Add to cart </a>
                     {%endif%}
                 </figcaption>
             </figure>

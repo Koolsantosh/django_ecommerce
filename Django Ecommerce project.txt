@@ -498,3 +498,37 @@ step 52: change cover page photo in home.html:
 
 	<img src="{%static 'images/banners/cover.jpg'%}" class="img-fluid rounded">
 
+step 53: upload code to GitHub : use .gitignore file: not to upload media files other unnecessary files
+
+step 54: create carts app & add in install app of settings.py
+
+step 55: load templates of cart templates/carts/cart.html & make necessary changes to load static files
+
+step 56: make models in models.py file of cart and migrate it:
+
+from django.db import models
+from store.models import Product
+
+# Create your models here.
+class Cart(models.Model):
+    cart_id = models.CharField(max_length=250,blank=True)
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.cart_id
+
+class CartItem(models.Model):
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.product
+
+step 57: add cart to the cart page: first write function to add product to an cart: by receiving product id:
+
+#need to access session id: we will assign that session id to the cart_id , because whoever is using website that user will be assigned as session id
+
+
+
