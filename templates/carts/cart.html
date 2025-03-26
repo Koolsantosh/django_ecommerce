@@ -6,14 +6,15 @@
 
 {%block content%}
 
+
 <section class="section-content padding-y bg">
     <div class="container">
     
     <!-- ============================ COMPONENT 1 ================================= -->
-    {%if not cart_items%}
-    <h3 class="text-center py-3">Your Shopping Cart is Empty</h3>
+    {% if not cart_items %}
     <div class="text-center">
-    <a href="{% url 'store' %}" class="btn btn-primary"> View Products </a>
+    <h4 class="text-center py-3">Your shopping cart is empty</h4>
+    <a href="{% url 'store' %}" class="btn btn-primary"> View Products</a>
 </div>
     {%else%}
     <div class="row">
@@ -29,15 +30,18 @@
     </tr>
     </thead>
     <tbody>
-       
-    {% for cart_item in cart_items %}
+    {%for cart_item in cart_items %}
         <tr>
         <td>
             <figure class="itemside align-items-center">
                 <div class="aside"><img src="{{cart_item.product.images.url}}" class="img-sm"></div>
                 <figcaption class="info">
-                    <a href="{{ cart_item.product.get_url }}" class="title text-dark">{{cart_item.product.product_name}}</a>
-                    <p class="text-muted small">Matrix: 25 Mpx <br> Brand: Canon</p>
+                    <a href="{{cart_item.product.get_url}}" class="title text-dark">{{cart_item.product.product_name}}</a>
+                    {% if cart_item.variations.all %}
+                    {% for item in cart_item.variations.all%}
+                    <p class="text-muted small"> {{item.variation_category | capfirst}} : {{item.variation_value | capfirst}}</p>
+                    {%endfor%}
+                    {%endif%}
                 </figcaption>
             </figure>
         </td>
@@ -50,14 +54,14 @@
                                 </div>
                                 <input type="text" class="form-control"  value="{{cart_item.quantity}}">
                                 <div class="input-group-append">
-                                <a  href="{% url 'add_cart' cart_item.product.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
+                                <a href="{% url 'add_cart' cart_item.product.id %}" class="btn btn-light" type="button" id="button-minus"> <i class="fa fa-plus"></i> </a>
                                 </div>
                             </div> <!-- input-group.// -->
                         </div> <!-- col.// -->
         </td>
         <td> 
             <div class="price-wrap"> 
-                <var class="price">${{cart_item.sub_total}}.00</var> <!--here sub_total is function in model -->
+                <var class="price">${{cart_item.sub_total}}</var> 
                 <small class="text-muted"> ${{cart_item.product.price}} each </small> 
             </div> <!-- price-wrap .// -->
         </td>
@@ -66,8 +70,6 @@
         </td>
     </tr>
     {%endfor%}
-
-
     </tbody>
     </table>
     </div> <!-- card.// -->
@@ -104,7 +106,6 @@
     </div> <!-- row.// -->
     <!-- ============================ COMPONENT 1 END .// ================================= -->
     {%endif%}
-    
     </div> <!-- container .//  -->
     </section>
     <!-- ========================= SECTION CONTENT END// ========================= -->
