@@ -8,6 +8,7 @@ class CartAdmin(admin.ModelAdmin):
 
 class CartItemAdmin(admin.ModelAdmin):
     list_display=('product','cart','quantity','is_active')
+    filter_horizontal=('variations',)
 
 admin.site.register(Cart,CartAdmin)
 admin.site.register(CartItem,CartItemAdmin)

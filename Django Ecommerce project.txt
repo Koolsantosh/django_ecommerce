@@ -532,3 +532,20 @@ step 57: add cart to the cart page: first write function to add product to an ca
 
 
 
+
+
+
+
+
+
+............................
+
+lost data for some steps
+
+.....................
+
+ ***after making variation also be added and grouping of same item done in cart:***
+
+step R1: Make + and minus, remove button working: the add_cart is receiving variations based on POST request: make changes in cart.html page:
+
+
